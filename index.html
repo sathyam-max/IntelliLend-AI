@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IntelliLend AI</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(rgba(11,26,47,0.9), rgba(11,26,47,0.9)),
+              url('https://images.unsplash.com/photo-1565514158740-064f34bd6c7b');
+  background-size: cover;
+  color: white;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: gold;
+  font-weight: 700;
+}
+
+.card {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(15px);
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.section {
+  margin-bottom: 15px;
+}
+
+.section h3 {
+  color: gold;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+input, select {
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  width: 100%;
+  font-weight: 500;
+}
+
+button {
+  background: gold;
+  border: none;
+  padding: 14px;
+  width: 100%;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 10px;
+  margin-top: 15px;
+}
+
+.loader {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.result {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 12px;
+  background: white;
+  color: black;
+}
+
+.badge {
+  padding: 10px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  border-radius: 8px;
+}
+
+.green { background: #2ecc71; }
+.orange { background: #f39c12; }
+.red { background: #e74c3c; }
+
+ul {
+  padding-left: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🏦 IntelliLend AI</h1>
+
+<div class="card">
+
+<div class="section">
+<h3>👤 Personal Details</h3>
+<div class="grid">
+<input id="name" placeholder="Full Name">
+<input id="age" type="number" placeholder="Age">
+</div>
+</div>
+
+<div class="section">
+<h3>💼 Employment</h3>
+<div class="grid">
+<select id="employment">
+<option value="">Employment Type</option>
+<option value="salaried">Salaried</option>
+<option value="self-employed">Self Employed</option>
+<option value="freelance">Freelance</option>
+</select>
+<input id="experience" type="number" placeholder="Years of Experience">
+</div>
+</div>
+
+<div class="section">
+<h3>💰 Financial</h3>
+<div class="grid">
+<input id="income" type="number" placeholder="Monthly Income">
+<input id="emi" type="number" placeholder="Existing EMI">
+</div>
+</div>
+
+<div class="section">
+<h3>🏦 Loan Request</h3>
+<div class="grid">
+<input id="loan" type="number" placeholder="Loan Amount">
+<input id="tenure" type="number" placeholder="Tenure (months)">
+</div>
+</div>
+
+<div class="section">
+<h3>📊 Credit Profile</h3>
+<input id="credit" type="number" placeholder="Credit Score">
+</div>
+
+<button onclick="submitForm()">🤖 Analyze with AI</button>
+
+<div id="loader" class="loader"></div>
+
+</div>
+
+<div id="result" class="result" style="display:none;"></div>
+
+</div>
+
+<script>
+async function submitForm() {
+
+  const loader = document.getElementById("loader");
+  const resultDiv = document.getElementById("result");
+
+  loader.innerHTML = "🔍 AI analyzing your application...";
+  resultDiv.style.display = "none";
+
+  const data = {
+    name: document.getElementById("name").value,
+    age: Number(document.getElementById("age").value),
+    employment_type: document.getElementById("employment").value,
+    years_of_experience: Number(document.getElementById("experience").value),
+    monthly_income: Number(document.getElementById("income").value),
+    existing_emi: Number(document.getElementById("emi").value),
+    credit_score: Number(document.getElementById("credit").value),
+    loan_amount_requested: Number(document.getElementById("loan").value),
+    loan_tenure_months: Number(document.getElementById("tenure").value)
+  };
+
+  try {
+    const res = await fetch("https://msathya.app.n8n.cloud/webhook-test/loan-application", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+
+    let color = result.decision === "Approved" ? "green" :
+                result.decision === "Conditionally Approved" ? "orange" : "red";
+
+    resultDiv.innerHTML = `
+      <div class="badge ${color}">${result.decision}</div>
+      <p><strong>Score:</strong> ${result.total_score}</p>
+      <p><strong>Risk Level:</strong> ${result.risk_level}</p>
+      <p><strong>Interest Rate:</strong> ${result.interest_rate}</p>
+
+      <h4>📌 Reasons</h4>
+      <ul>${(result.reasons || []).map(r => "<li>"+r+"</li>").join("")}</ul>
+
+      <h4>💡 Suggestions</h4>
+      <ul>${(result.suggestions || []).map(r => "<li>"+r+"</li>").join("")}</ul>
+    `;
+
+    resultDiv.style.display = "block";
+    loader.innerHTML = "";
+
+  } catch (error) {
+    loader.innerHTML = "";
+    resultDiv.style.display = "block";
+    resultDiv.innerHTML = "❌ Error connecting to AI system";
+  }
+}
+</script>
+
+</body>
+</html>
